@@ -1,4 +1,4 @@
-FROM --platform=arm64 ghcr.io/graalvm/jdk-community:21.0.2
+FROM --platform=$TARGETOS/$TARGETARCH ghcr.io/graalvm/jdk-community:21.0.2
 
 LABEL author="Nikomaru" maintainer="nikomaru@nikomaru.dev"
 
