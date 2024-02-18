@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 FROM --platform=$TARGETOS/$TARGETARCH ubuntu:22.04
+=======
+FROM --platform=$TARGETOS/$TARGETARCH ghcr.io/graalvm/jdk-community:21.0.2
+>>>>>>> 3838252b6593a13559a3106694ceaa0b39d7dc58
 
 LABEL author="Nikomaru" maintainer="nikomaru@nikomaru.dev"
 LABEL org.opencontainers.image.source="https://github.com/Nlkomaru/yolks"
