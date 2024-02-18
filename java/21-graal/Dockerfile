@@ -1,11 +1,10 @@
-FROM --platform=$TARGETOS/$TARGETARCH ghcr.io/graalvm/jdk-community:21
+FROM --platform=arm64 ghcr.io/graalvm/jdk-community:21.0.2
 
 LABEL author="Nikomaru" maintainer="nikomaru@nikomaru.dev"
 
-LABEL org.opencontainers.image.source="https://github.com/morinoparty/fruits"
+LABEL org.opencontainers.image.source="https://github.com/Nlkomaru/yolks"
 
-RUN apt-get update -y \
-    && apt-get install -y lsof curl ca-certificates openssl git tar sqlite3 fontconfig libfreetype6 tzdata iproute2 libstdc++6 \
+RUN microdnf install -y lsof curl ca-certificates openssl git tar sqlite fontconfig freetype tzdata iproute libstdc++ \
     && useradd -d /home/container -m container
 
 USER container
