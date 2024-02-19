@@ -17,7 +17,9 @@ jobs:
       matrix:
         tag:
           - 21-azul_zulu
-          - 21-graal
+          - 21-graalvm_jdk
+          - 21-open_j9
+          - 21-temurin
     steps:
       - uses: actions/checkout@v3
       - uses: docker/setup-qemu-action@v2
