@@ -20,6 +20,10 @@ jobs:
           - 21-graalvm_jdk
           - 21-open_j9
           - 21-temurin
+          - 25-azul_zulu
+          - 25-graalvm_jdk
+          - 25-open_j9
+          - 25-temurin
     steps:
       - uses: actions/checkout@v3
       - uses: docker/setup-qemu-action@v2
