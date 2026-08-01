@@ -145,7 +145,7 @@ variables:
     sort: 4
   -
     name: 'JVM Heap Size (MB)'
-    description: "Size of the JVM heap in MB, used for both -Xms and -Xmx.\r\n\r\nSet this to the memory you allocated to the server, no higher. It is the heap only - Metaspace, GC structures, thread stacks, native/direct buffers and off-heap plugin allocations are on top of it, and Wings allows for those separately (5-15% depending on the allocation). Exceeding the container limit gets the process OOM-killed, which is far less diagnosable than an OutOfMemoryError."
+    description: "Size of the JVM heap in MB, used for both -Xms and -Xmx.\r\n\r\nThis is the heap only - Metaspace, GC structures, thread stacks, native/direct buffers and off-heap plugin allocations sit on top of it, so keep it below the memory allocated to this server. A good starting point is the allocation minus 1000-1500MB, which is PaperMC's guidance: 1024 for a 2GB server, 3072 for 4GB, 7168 for 8GB, 15360 for 16GB. The default of 2048 suits a server with roughly 3GB or more.\r\n\r\nSetting it larger than the container can hold does not degrade gracefully: -XX:+AlwaysPreTouch commits the whole heap during startup, so the kernel kills the process immediately with exit code 137 and no Java error message."
     env_variable: JVM_HEAP_MB
     default_value: '2048'
     user_viewable: true

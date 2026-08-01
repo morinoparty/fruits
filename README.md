@@ -81,9 +81,9 @@ That overhead alone is thinner than it looks — 15% of 2GB is 307MB, and Metasp
 | 8GB | 8602MB | 7168 | 1434MB |
 | 16GB | 17203MB | 15360 | 1843MB |
 
-**The default of 2048 therefore assumes a server with at least ~3GB allocated.** On a 2GB server, lower it.
+The default of 2048 fits a server with roughly 3GB or more allocated; below that, follow the table.
 
-Exceeding the container limit gets the process OOM-killed by the kernel, which is far less diagnosable than an `OutOfMemoryError`.
+Setting the heap larger than the container can hold does not degrade gracefully. `-Xms == -Xmx` with `-XX:+AlwaysPreTouch` means the JVM commits and touches the entire heap during startup, so the kernel kills it before Paper prints anything: running the `Default` command with `JVM_HEAP_MB=2048` in a 1178MB container (a 1GB allocation) exits **137 with no Java-side error at all**. The same command in the 2355MB container starts normally.
 
 #### Why not `-XX:MaxRAMPercentage`
 
