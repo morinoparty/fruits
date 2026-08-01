@@ -54,17 +54,40 @@ The egg ships four startup commands. `Default` is the only one that is safe on e
 | `Java 25 - Generational ZGC` | Java 25 images | Sub-millisecond pauses at the cost of throughput and footprint. Worth trying on large heaps (16GB+) where G1's mixed collections still show up as tick lag. |
 | `Java 21 - Generational ZGC` | Java 21 images | Same, but Java 21 needs `-XX:+ZGenerational` to opt into generational mode. That flag was removed in Java 24, which is why this is a separate entry. |
 
-### JVM heap percentage
+### JVM heap size
 
-Rather than a hardcoded `-Xms`/`-Xmx`, the startup commands size the heap from the container limit:
+The heap is set explicitly, to the same value on both sides as Aikar's flags require (which is also what makes `-XX:+AlwaysPreTouch` meaningful):
 
 ```
--XX:InitialRAMPercentage={{JVM_RAM_PERCENT}} -XX:MaxRAMPercentage={{JVM_RAM_PERCENT}}
+-Xms{{JVM_HEAP_MB}}M -Xmx{{JVM_HEAP_MB}}M
 ```
 
-Setting both to the same value keeps Aikar's `Xms == Xmx` behaviour (and makes `-XX:+AlwaysPreTouch` meaningful) while tracking whatever memory the panel allocates, so resizing a server needs no startup edit.
+`JVM_HEAP_MB` is a panel variable, **default 2048**. This is the heap *alone* — Metaspace, GC bookkeeping, thread stacks, direct/native buffers and any off-heap allocation your plugins do all sit on top of it, so the value must be meaningfully **lower** than the memory you allocated to the server.
 
-`JVM_RAM_PERCENT` defaults to **85**. The remaining 15% is not spare — it is Metaspace, GC bookkeeping, thread stacks, direct/native buffers and any off-heap allocation your plugins do. Exceeding the container limit gets the process OOM-killed by the kernel, which is far less diagnosable than an `OutOfMemoryError`. PaperMC's own guidance is to leave 1000–1500MB of headroom, which works out to roughly 81% at 8GB. Lower the value if you run many plugins or a large view distance.
+How much lower depends on what Wings hands the container. It does not use the number shown in the panel as the cgroup limit; it multiplies the allocation to leave room for exactly that non-heap usage (`Docker.Overhead` defaults — a host admin can override them in `config.yml`):
+
+| Allocation | Multiplier | Container limit |
+|-----------|-----------|-----------------|
+| ≤ 2048MB | 1.15 | allocation + 15% |
+| ≤ 4096MB | 1.10 | allocation + 10% |
+| > 4096MB | 1.05 | allocation + 5% |
+
+That overhead alone is thinner than it looks — 15% of 2GB is 307MB, and Metaspace by itself can be 100–200MB. PaperMC's guidance is to leave 1000–1500MB outside the heap, so subtract that from the allocation rather than relying on the multiplier:
+
+| Allocation | Container limit | Suggested `JVM_HEAP_MB` | Left for non-heap |
+|-----------|-----------------|------------------------|-------------------|
+| 2GB | 2355MB | 1024 | 1331MB |
+| 4GB | 4506MB | 3072 | 1434MB |
+| 8GB | 8602MB | 7168 | 1434MB |
+| 16GB | 17203MB | 15360 | 1843MB |
+
+**The default of 2048 therefore assumes a server with at least ~3GB allocated.** On a 2GB server, lower it.
+
+Exceeding the container limit gets the process OOM-killed by the kernel, which is far less diagnosable than an `OutOfMemoryError`.
+
+#### Why not `-XX:MaxRAMPercentage`
+
+It is a percentage of the container limit, which makes it wrong in both directions here. On a 2GB server, `MaxRAMPercentage=85` measured out to a 2002MB heap inside the 2355MB container — it spends the headroom Wings just reserved. And a server allocated **0 (unlimited)** memory has no container limit at all, so the JVM reads the percentage against the host's RAM instead; on the 28944MB test host that produced a **24608MB** heap. The same startup command with `-Xmx2048M` stayed at 2048MB in both cases.
 
 ## Notes
 
@@ -75,7 +98,7 @@ Setting both to the same value keeps Aikar's `Xms == Xmx` behaviour (and makes `
 
 ## Verification
 
-Every startup command in the egg was checked against the images it is documented for: each flag individually (rejecting anything that printed `Unrecognized`, `Ignoring option` or a deprecation notice), then the combined string, then a real Paper boot to `Done (...)! For help, type "help"` — Paper 1.21.11 on the Java 21 images, Paper 26.2 on the Java 25 images — and finally through `entrypoint.sh` with `STARTUP` set exactly as the panel would, to confirm `{{SERVER_JARFILE}}` and `{{JVM_RAM_PERCENT}}` expand.
+Every startup command in the egg was checked against the images it is documented for: each flag individually (rejecting anything that printed `Unrecognized`, `Ignoring option` or a deprecation notice), then the combined string, then a real Paper boot to `Done (...)! For help, type "help"` — Paper 1.21.11 on the Java 21 images, Paper 26.2 on the Java 25 images — and finally through `entrypoint.sh` with `STARTUP` set exactly as the panel would, to confirm `{{SERVER_JARFILE}}` and `{{JVM_HEAP_MB}}` expand. The heap numbers above come from `-XX:+PrintFlagsFinal` through that same path, run both in a memory-limited container and in an unlimited one.
 
 ### Runtime comparison
 

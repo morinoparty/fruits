@@ -22,10 +22,10 @@ docker_images:
   'Java 21 - Azul Zulu': 'ghcr.io/morinoparty/fruits:java_21-azul_zulu'
 file_denylist: {  }
 startup_commands:
-  Default: 'java -XX:+UnlockExperimentalVMOptions -XX:InitialRAMPercentage={{JVM_RAM_PERCENT}} -XX:MaxRAMPercentage={{JVM_RAM_PERCENT}} -XX:+AlwaysPreTouch -XX:+DisableExplicitGC -XX:+ParallelRefProcEnabled -XX:+PerfDisableSharedMem -XX:+UseG1GC -XX:G1HeapRegionSize=8M -XX:G1HeapWastePercent=5 -XX:G1MaxNewSizePercent=40 -XX:G1MixedGCCountTarget=4 -XX:G1MixedGCLiveThresholdPercent=90 -XX:G1NewSizePercent=30 -XX:G1RSetUpdatingPauseTimePercent=5 -XX:G1ReservePercent=20 -XX:InitiatingHeapOccupancyPercent=15 -XX:MaxGCPauseMillis=200 -XX:MaxTenuringThreshold=1 -XX:SurvivorRatio=32 -XX:+EnableDynamicAgentLoading --enable-native-access=ALL-UNNAMED -Dusing.aikars.flags=https://mcflags.emc.gs -Daikars.new.flags=true -Dterminal.jline=false -Dterminal.ansi=true -jar {{SERVER_JARFILE}} nogui'
-  'Java 25 - G1GC (compact headers)': 'java -XX:+UnlockExperimentalVMOptions -XX:InitialRAMPercentage={{JVM_RAM_PERCENT}} -XX:MaxRAMPercentage={{JVM_RAM_PERCENT}} -XX:+UseCompactObjectHeaders -XX:+AlwaysPreTouch -XX:+DisableExplicitGC -XX:+ParallelRefProcEnabled -XX:+PerfDisableSharedMem -XX:+UseG1GC -XX:G1HeapRegionSize=8M -XX:G1HeapWastePercent=5 -XX:G1MaxNewSizePercent=40 -XX:G1MixedGCCountTarget=4 -XX:G1MixedGCLiveThresholdPercent=90 -XX:G1NewSizePercent=30 -XX:G1RSetUpdatingPauseTimePercent=5 -XX:G1ReservePercent=20 -XX:InitiatingHeapOccupancyPercent=15 -XX:MaxGCPauseMillis=200 -XX:MaxTenuringThreshold=1 -XX:SurvivorRatio=32 -XX:+EnableDynamicAgentLoading --enable-native-access=ALL-UNNAMED -Dusing.aikars.flags=https://mcflags.emc.gs -Daikars.new.flags=true -Dterminal.jline=false -Dterminal.ansi=true -jar {{SERVER_JARFILE}} nogui'
-  'Java 25 - Generational ZGC': 'java -XX:+UnlockExperimentalVMOptions -XX:InitialRAMPercentage={{JVM_RAM_PERCENT}} -XX:MaxRAMPercentage={{JVM_RAM_PERCENT}} -XX:+UseZGC -XX:+UseCompactObjectHeaders -XX:+AlwaysPreTouch -XX:+DisableExplicitGC -XX:+ParallelRefProcEnabled -XX:+PerfDisableSharedMem -XX:+EnableDynamicAgentLoading --enable-native-access=ALL-UNNAMED -Dterminal.jline=false -Dterminal.ansi=true -jar {{SERVER_JARFILE}} nogui'
-  'Java 21 - Generational ZGC': 'java -XX:+UnlockExperimentalVMOptions -XX:InitialRAMPercentage={{JVM_RAM_PERCENT}} -XX:MaxRAMPercentage={{JVM_RAM_PERCENT}} -XX:+UseZGC -XX:+ZGenerational -XX:+AlwaysPreTouch -XX:+DisableExplicitGC -XX:+ParallelRefProcEnabled -XX:+PerfDisableSharedMem -XX:+EnableDynamicAgentLoading --enable-native-access=ALL-UNNAMED -Dterminal.jline=false -Dterminal.ansi=true -jar {{SERVER_JARFILE}} nogui'
+  Default: 'java -XX:+UnlockExperimentalVMOptions -Xms{{JVM_HEAP_MB}}M -Xmx{{JVM_HEAP_MB}}M -XX:+AlwaysPreTouch -XX:+DisableExplicitGC -XX:+ParallelRefProcEnabled -XX:+PerfDisableSharedMem -XX:+UseG1GC -XX:G1HeapRegionSize=8M -XX:G1HeapWastePercent=5 -XX:G1MaxNewSizePercent=40 -XX:G1MixedGCCountTarget=4 -XX:G1MixedGCLiveThresholdPercent=90 -XX:G1NewSizePercent=30 -XX:G1RSetUpdatingPauseTimePercent=5 -XX:G1ReservePercent=20 -XX:InitiatingHeapOccupancyPercent=15 -XX:MaxGCPauseMillis=200 -XX:MaxTenuringThreshold=1 -XX:SurvivorRatio=32 -XX:+EnableDynamicAgentLoading --enable-native-access=ALL-UNNAMED -Dusing.aikars.flags=https://mcflags.emc.gs -Daikars.new.flags=true -Dterminal.jline=false -Dterminal.ansi=true -jar {{SERVER_JARFILE}} nogui'
+  'Java 25 - G1GC (compact headers)': 'java -XX:+UnlockExperimentalVMOptions -Xms{{JVM_HEAP_MB}}M -Xmx{{JVM_HEAP_MB}}M -XX:+UseCompactObjectHeaders -XX:+AlwaysPreTouch -XX:+DisableExplicitGC -XX:+ParallelRefProcEnabled -XX:+PerfDisableSharedMem -XX:+UseG1GC -XX:G1HeapRegionSize=8M -XX:G1HeapWastePercent=5 -XX:G1MaxNewSizePercent=40 -XX:G1MixedGCCountTarget=4 -XX:G1MixedGCLiveThresholdPercent=90 -XX:G1NewSizePercent=30 -XX:G1RSetUpdatingPauseTimePercent=5 -XX:G1ReservePercent=20 -XX:InitiatingHeapOccupancyPercent=15 -XX:MaxGCPauseMillis=200 -XX:MaxTenuringThreshold=1 -XX:SurvivorRatio=32 -XX:+EnableDynamicAgentLoading --enable-native-access=ALL-UNNAMED -Dusing.aikars.flags=https://mcflags.emc.gs -Daikars.new.flags=true -Dterminal.jline=false -Dterminal.ansi=true -jar {{SERVER_JARFILE}} nogui'
+  'Java 25 - Generational ZGC': 'java -XX:+UnlockExperimentalVMOptions -Xms{{JVM_HEAP_MB}}M -Xmx{{JVM_HEAP_MB}}M -XX:+UseZGC -XX:+UseCompactObjectHeaders -XX:+AlwaysPreTouch -XX:+DisableExplicitGC -XX:+ParallelRefProcEnabled -XX:+PerfDisableSharedMem -XX:+EnableDynamicAgentLoading --enable-native-access=ALL-UNNAMED -Dterminal.jline=false -Dterminal.ansi=true -jar {{SERVER_JARFILE}} nogui'
+  'Java 21 - Generational ZGC': 'java -XX:+UnlockExperimentalVMOptions -Xms{{JVM_HEAP_MB}}M -Xmx{{JVM_HEAP_MB}}M -XX:+UseZGC -XX:+ZGenerational -XX:+AlwaysPreTouch -XX:+DisableExplicitGC -XX:+ParallelRefProcEnabled -XX:+PerfDisableSharedMem -XX:+EnableDynamicAgentLoading --enable-native-access=ALL-UNNAMED -Dterminal.jline=false -Dterminal.ansi=true -jar {{SERVER_JARFILE}} nogui'
 config:
   files:
     server.properties:
@@ -144,14 +144,14 @@ variables:
       - 'max:20'
     sort: 4
   -
-    name: 'JVM Heap Percentage'
-    description: "Percentage of the container memory limit the JVM heap may grow to.\r\n\r\nThe rest is left for Metaspace, GC structures, thread stacks, native/direct buffers and off-heap plugin allocations. Raising this too far will get the server OOM-killed instead of throwing an OutOfMemoryError. 85 is a safe default; lower it to 75-80 if you run many plugins or a large view-distance."
-    env_variable: JVM_RAM_PERCENT
-    default_value: '85.0'
+    name: 'JVM Heap Size (MB)'
+    description: "Size of the JVM heap in MB, used for both -Xms and -Xmx.\r\n\r\nSet this to the memory you allocated to the server, no higher. It is the heap only - Metaspace, GC structures, thread stacks, native/direct buffers and off-heap plugin allocations are on top of it, and Wings allows for those separately (5-15% depending on the allocation). Exceeding the container limit gets the process OOM-killed, which is far less diagnosable than an OutOfMemoryError."
+    env_variable: JVM_HEAP_MB
+    default_value: '2048'
     user_viewable: true
     user_editable: true
     rules:
       - required
-      - numeric
-      - 'between:10,100'
+      - integer
+      - 'between:512,262144'
     sort: 5
