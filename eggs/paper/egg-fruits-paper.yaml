@@ -75,18 +75,45 @@ scripts:
       	echo -e "Project: ${PROJECT}"
       	echo -e "MC Version: ${MINECRAFT_VERSION}"
       	echo -e "Build: ${BUILD_NUMBER}"
-      	DOWNLOAD_URL=`curl -s https://fill.papermc.io/v3/projects/${PROJECT}/versions/${MINECRAFT_VERSION}/builds/${BUILD_NUMBER} | jq -r '.downloads."server:default".url'`
+      	BUILD_JSON=`curl -s https://fill.papermc.io/v3/projects/${PROJECT}/versions/${MINECRAFT_VERSION}/builds/${BUILD_NUMBER}`
+      	DOWNLOAD_URL=`echo "${BUILD_JSON}" | jq -r '.downloads."server:default".url'`
+      	DOWNLOAD_NAME=`echo "${BUILD_JSON}" | jq -r '.downloads."server:default".name'`
       fi
 
       cd /mnt/server
 
-      echo -e "Running curl -o ${SERVER_JARFILE} ${DOWNLOAD_URL}"
+      # If SERVER_JARFILE contains a wildcard, keep Paper's own filename
+      # (paper-<version>-<build>.jar) so the jar is named the same way it is when
+      # downloaded by hand. Otherwise save under the literal name that was given.
+      case "${SERVER_JARFILE}" in
+      	*[*?]*)
+      		JAR_NAME="${DOWNLOAD_NAME}"
+      		if [ -z "${JAR_NAME}" ] || [ "${JAR_NAME}" = "null" ]; then
+      			JAR_NAME=`basename "${DOWNLOAD_URL%%\?*}"`
+      		fi
+      		if [ -z "${JAR_NAME}" ]; then
+      			JAR_NAME="paper.jar"
+      		fi
+      		;;
+      	*)
+      		JAR_NAME="${SERVER_JARFILE}"
+      		;;
+      esac
 
-      if [ -f ${SERVER_JARFILE} ]; then
-      	mv ${SERVER_JARFILE} ${SERVER_JARFILE}.old
+      # A wildcard that matches more than one jar does not fail - java runs the
+      # first match and passes the rest as arguments, silently starting the older
+      # build. Move any previous jar out of the way before downloading.
+      for f in paper-*.jar; do
+      	[ -e "$f" ] && mv -- "$f" "$f.old"
+      done
+
+      if [ -f "${JAR_NAME}" ]; then
+      	mv -- "${JAR_NAME}" "${JAR_NAME}.old"
       fi
 
-      curl -o ${SERVER_JARFILE} ${DOWNLOAD_URL}
+      echo -e "Running curl -o ${JAR_NAME} ${DOWNLOAD_URL}"
+
+      curl -o "${JAR_NAME}" "${DOWNLOAD_URL}"
 
       if [ ! -f server.properties ]; then
           echo -e "Downloading MC server.properties"
@@ -109,14 +136,14 @@ variables:
     sort: 1
   -
     name: 'Server Jar File'
-    description: 'The name of the server jarfile to run the server with.'
+    description: "The name of the server jarfile to run the server with.\r\n\r\nThe default keeps Paper's own filename (paper-<version>-<build>.jar), matching what you get downloading Paper by hand, and the * expands at startup. The installer moves any previous paper-*.jar aside so the wildcard only ever matches one file. Set a literal name such as server.jar if you prefer a fixed filename - the installer will then save it under exactly that name."
     env_variable: SERVER_JARFILE
-    default_value: server.jar
+    default_value: 'paper-*.jar'
     user_viewable: true
     user_editable: true
     rules:
       - required
-      - 'regex:/^([\w\d._-]+)(\.jar)$/'
+      - 'regex:/^([\w\d.*?_-]+)(\.jar)$/'
     sort: 2
   -
     name: 'Download Path'

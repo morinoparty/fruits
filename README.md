@@ -54,6 +54,14 @@ The egg ships four startup commands. `Default` is the only one that is safe on e
 | `Java 25 - Generational ZGC` | Java 25 images | Sub-millisecond pauses at the cost of throughput and footprint. Worth trying on large heaps (16GB+) where G1's mixed collections still show up as tick lag. |
 | `Java 21 - Generational ZGC` | Java 21 images | Same, but Java 21 needs `-XX:+ZGenerational` to opt into generational mode. That flag was removed in Java 24, which is why this is a separate entry. |
 
+### Server jar file
+
+`SERVER_JARFILE` defaults to `paper-*.jar`. The installer saves the jar under Paper's own filename — `paper-1.21.11-132.jar`, the same thing you get downloading it by hand — and the `*` is expanded at startup by `entrypoint.sh`, which passes `STARTUP` through `eval echo` before `exec`.
+
+The wildcard has one sharp edge, and the installer is what blunts it: if it matches more than one jar, the JVM does not complain. It runs the first match and treats the rest as program arguments, so `java -jar paper-1.21.10-130.jar paper-1.21.11-132.jar nogui` **silently starts the older build**. Since the install script also runs on every reinstall — and `MINECRAFT_VERSION=latest` means a reinstall usually brings a new filename — it renames any existing `paper-*.jar` to `.jar.old` before downloading, so exactly one file ever matches.
+
+Set a literal name such as `server.jar` if you would rather have a fixed filename; the installer detects that there is no wildcard and saves under exactly that name, which is the pre-existing behaviour.
+
 ### JVM heap size
 
 The heap is set explicitly, to the same value on both sides as Aikar's flags require (which is also what makes `-XX:+AlwaysPreTouch` meaningful):
@@ -98,7 +106,7 @@ It is a percentage of the container limit, which makes it wrong in both directio
 
 ## Verification
 
-Every startup command in the egg was checked against the images it is documented for: each flag individually (rejecting anything that printed `Unrecognized`, `Ignoring option` or a deprecation notice), then the combined string, then a real Paper boot to `Done (...)! For help, type "help"` — Paper 1.21.11 on the Java 21 images, Paper 26.2 on the Java 25 images — and finally through `entrypoint.sh` with `STARTUP` set exactly as the panel would, to confirm `{{SERVER_JARFILE}}` and `{{JVM_HEAP_MB}}` expand. The heap numbers above come from `-XX:+PrintFlagsFinal` through that same path, run both in a memory-limited container and in an unlimited one.
+Every startup command in the egg was checked against the images it is documented for: each flag individually (rejecting anything that printed `Unrecognized`, `Ignoring option` or a deprecation notice), then the combined string, then a real Paper boot to `Done (...)! For help, type "help"` — Paper 1.21.11 on the Java 21 images, Paper 26.2 on the Java 25 images — and finally through `entrypoint.sh` with `STARTUP` set exactly as the panel would, to confirm `{{SERVER_JARFILE}}` and `{{JVM_HEAP_MB}}` expand. The install script was run against the real API for both the wildcard and the literal-name case, twice over, to confirm the `.old` rename leaves a single match — then booted from that directory to `Done (11.556s)!` on `paper-*.jar`. The heap numbers above come from `-XX:+PrintFlagsFinal` through that same path, run both in a memory-limited container and in an unlimited one.
 
 ### Runtime comparison
 
