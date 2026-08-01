@@ -2,7 +2,7 @@
 
 Java container images for Minecraft servers on [Pelican](https://pelican.dev/) (and Pterodactyl), plus a Paper egg tuned for them.
 
-Four JVM distributions are built for each of the two current LTS releases, so you can pick the runtime that fits your server. The images follow the same `/entrypoint.sh` contract as Pelican's official `yolks` images, so they are drop-in replacements in any egg.
+Four JVM distributions are built for each of the two current LTS releases, so you can pick the runtime that fits your server. Each image runs the standard Pelican `entrypoint.sh`, which expands the panel's `STARTUP` variable, so the images can be used from any egg that expects a Java image.
 
 ## Images
 
@@ -84,11 +84,11 @@ Which JVM to offer was measured rather than guessed. Same Paper build (1.21.11),
 | Runtime | Java 21 | Java 25 |
 |---------|---------|---------|
 | Eclipse Temurin | 15.5s | 15.1s |
-| Azul Zulu | 15.2s | **14.8s** |
+| Azul Zulu | 15.2s | 14.8s |
 | GraalVM Community | 16.5s | 16.4s |
 | OpenJ9 (gencon) | 18.7s | 18.0s |
 
-Temurin and Zulu are indistinguishable from each other and fastest; GraalVM is 7–9% behind, OpenJ9 18–20%. That is why the egg offers Temurin and Zulu only.
+Temurin and Zulu are the fastest and are indistinguishable from each other — their individual runs overlap, so the 0.3s between the medians is noise, not a ranking. GraalVM is 7–9% behind and OpenJ9 18–20%, both well outside that noise. That is why the egg offers Temurin and Zulu only.
 
 Read this for what it is: a short, chunk-generation-dominated workload measured before any JIT has fully warmed up. It says nothing about steady-state tick throughput or GC pause behaviour over a long session — if you have a reason to prefer GraalVM, the image is still built and you can point a server at it.
 
