@@ -1,7 +1,7 @@
 FROM --platform=$TARGETOS/$TARGETARCH ubuntu:22.04
 
 LABEL author="Nikomaru" maintainer="nikomaru@nikomaru.dev"
-LABEL org.opencontainers.image.source="https://github.com/Nlkomaru/yolks"
+LABEL org.opencontainers.image.source="https://github.com/morinoparty/fruits"
 
 RUN ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
 # Install necessary dependencies
