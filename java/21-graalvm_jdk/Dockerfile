@@ -1,4 +1,4 @@
-FROM --platform=$TARGETOS/$TARGETARCH ubuntu:22.04
+FROM --platform=$TARGETOS/$TARGETARCH ubuntu:26.04
 
 LABEL author="Nikomaru" maintainer="nikomaru@nikomaru.dev"
 LABEL org.opencontainers.image.source="https://github.com/Nlkomaru/yolks"
