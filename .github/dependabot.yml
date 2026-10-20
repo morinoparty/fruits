@@ -1,0 +1,29 @@
+version: 2
+updates:
+  - package-ecosystem: "docker"
+    directories:
+      - "/java/*"
+    schedule:
+      interval: "weekly"
+    groups:
+      docker:
+        patterns:
+          - "*"
+    ignore:
+      # Java の major（21 / 25）はディレクトリ単位で固定しているため、major 更新は行わない
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
+      # ubuntu は LTS 間の更新（例: 22.04 → 24.04）を手動で行う。非 LTS（xx.10）への minor 更新も除外する
+      - dependency-name: "ubuntu"
+        update-types:
+          - "version-update:semver-minor"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
