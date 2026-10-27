@@ -1,6 +1,6 @@
 # fruits
 
-Java container images for Minecraft servers on [Pelican](https://pelican.dev/) (and Pterodactyl), plus a Paper egg tuned for them.
+Java container images for Minecraft servers on [Pelican](https://pelican.dev/) (and Pterodactyl), plus Paper and Velocity eggs tuned for them.
 
 Four JVM distributions are built for each of the two current LTS releases, so you can pick the runtime that fits your server. Each image runs the standard Pelican `entrypoint.sh`, which expands the panel's `STARTUP` variable, so the images can be used from any egg that expects a Java image.
 
@@ -97,6 +97,56 @@ Setting the heap larger than the container can hold does not degrade gracefully.
 
 It is a percentage of the container limit, which makes it wrong in both directions here. On a 2GB server, `MaxRAMPercentage=85` measured out to a 2002MB heap inside the 2355MB container — it spends the headroom Wings just reserved. And a server allocated **0 (unlimited)** memory has no container limit at all, so the JVM reads the percentage against the host's RAM instead; on the 28944MB test host that produced a **24608MB** heap. The same startup command with `-Xmx2048M` stayed at 2048MB in both cases.
 
+## Velocity egg
+
+`eggs/velocity/egg-fruits-velocity.yaml` is a Pelican egg (`PLCN_v3`) for the [Velocity](https://papermc.io/software/velocity) proxy. It is modelled on the [pelican-eggs](https://github.com/pelican-eggs/minecraft) Velocity egg, but the install script is rewritten from this repository's Paper one: the upstream script reads `MINECRAFT_VERSION` while its variable is `VELOCITY_VERSION` (so the version field is ignored), requires a `USER_AGENT` variable whose default is empty (so a fresh import fails to install), and downloads a `server.properties` a proxy has no use for.
+
+It offers the same four images as the Paper egg. **Velocity 4.x requires Java 25**; on a Java 21 image it stops immediately with `UnsupportedClassVersionError ... class file version 69.0`. Use a Java 21 image only for Velocity 3.x.
+
+### Install
+
+**Admin → Eggs → Import Egg → From URL**:
+
+```
+https://raw.githubusercontent.com/morinoparty/fruits/refs/heads/main/eggs/velocity/egg-fruits-velocity.yaml
+```
+
+As with the Paper egg, that URL is also the `update_url`.
+
+### Version selection
+
+`VELOCITY_VERSION` defaults to `latest`, which means the **newest release** — the newest version without `-SNAPSHOT` in its name (4.2.0 at the time of writing). The Fill API lists `4.2.1-SNAPSHOT` first, so the upstream approach of taking the first entry installs a snapshot by default. The build `channel` field cannot be used to tell them apart either: `4.2.1-SNAPSHOT` has builds marked `STABLE`.
+
+| Value | Installs |
+|-------|----------|
+| `latest` | Newest release |
+| `snapshot` | Newest version of any kind, `-SNAPSHOT` included |
+| An exact version, e.g. `3.5.1`, `4.2.1-SNAPSHOT` | That version; anything not listed falls back to `latest` |
+
+Versions and build numbers are matched exactly, so `4.2` is not mistaken for `4.2.0`.
+
+### Startup commands
+
+| Startup command | Use with | Notes |
+|-----------------|----------|-------|
+| `Default` | Any image, Java 21 and 25 | The flags from Velocity's [tuning guide](https://docs.papermc.io/velocity/tuning/): G1GC with 4MB regions. `-Dterminal.jline=false -Dterminal.ansi=true` are added as in the Paper egg, which gives coloured output in the panel console and silences the `Advanced terminal features are not available` warning. |
+| `Java 25 - G1GC (compact headers)` | Java 25 images | Adds `-XX:+UseCompactObjectHeaders`, as in the Paper egg. Java 21 refuses to start with this flag. |
+
+The server jar works the same way as the Paper egg's: `SERVER_JARFILE` defaults to `velocity-*.jar`, the installer saves Velocity's own filename (`velocity-4.2.0-30.jar`) and renames any previous `velocity-*.jar` to `.jar.old` so the wildcard only ever matches one file.
+
+### Port and `velocity.toml`
+
+The panel sets the listening port by rewriting the `bind = ` line of `velocity.toml`. That only works if the file already exists on first start, and neither obvious shortcut gives you one:
+
+- **No file**: Velocity writes its own default config and binds **25565**, not the port the panel allocated.
+- **A file containing only the `bind` line**: Velocity treats it as an old config version, warns `You are currently using a deprecated configuration version` and migrates it.
+
+So the installer extracts `default-velocity.toml` — the default config bundled inside the jar it just downloaded, which always matches that Velocity version — when no `velocity.toml` exists yet. An existing config is never overwritten, including across a reinstall to a different version; Velocity migrates older config versions itself.
+
+### JVM heap size
+
+`JVM_HEAP_MB` works as in the Paper egg (`-Xms` and `-Xmx` set to the same value, with `-XX:+AlwaysPreTouch`), but defaults to **512**, which fits a 1GB allocation (a 1178MB container). A proxy needs far less than a game server; 1024 on a 2GB allocation is plenty for most networks.
+
 ## Notes
 
 - **Minecraft 26.1 and newer require Java 25.** On a Java 21 image, Paper refuses to start with `Minecraft 26.1 and newer requires running the server with Java 25 or above`. The Java 21 images remain useful for 1.21.x and older.
@@ -107,6 +157,8 @@ It is a percentage of the container limit, which makes it wrong in both directio
 ## Verification
 
 Every startup command in the egg was checked against the images it is documented for: each flag individually (rejecting anything that printed `Unrecognized`, `Ignoring option` or a deprecation notice), then the combined string, then a real Paper boot to `Done (...)! For help, type "help"` — Paper 1.21.11 on the Java 21 images, Paper 26.2 on the Java 25 images — and finally through `entrypoint.sh` with `STARTUP` set exactly as the panel would, to confirm `{{SERVER_JARFILE}}` and `{{JVM_HEAP_MB}}` expand. The install script was run against the real API for both the wildcard and the literal-name case, twice over, to confirm the `.old` rename leaves a single match — then booted from that directory to `Done (11.556s)!` on `paper-*.jar`. The heap numbers above come from `-XX:+PrintFlagsFinal` through that same path, run both in a memory-limited container and in an unlimited one.
+
+The Velocity egg went through the same process: each flag on all four images, then the install script run against the real API for `latest`, `snapshot`, exact versions, a nonexistent version and build, a literal jar name and a reinstall over an older version, then a boot through `entrypoint.sh` with the panel's `STARTUP` in a 1178MB container — Velocity 4.2.0 on the Java 25 images with both startup commands, Velocity 3.5.1 on the Java 21 images — to `Done (...)!` on the allocated port with no JVM warnings, and a clean shutdown with `end`.
 
 ### Runtime comparison
 

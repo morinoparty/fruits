@@ -1,0 +1,200 @@
+_comment: 'DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY PANEL'
+meta:
+  version: PLCN_v3
+  update_url: 'https://raw.githubusercontent.com/morinoparty/fruits/refs/heads/main/eggs/velocity/egg-fruits-velocity.yaml'
+exported_at: '2026-10-15T00:00:00+00:00'
+name: 'Velocity (Fruits)'
+author: nikomaru@nikomaru.dev
+uuid: 6be86af3-c325-42f1-a022-27b9d925d5da
+description: 'Velocity is a Minecraft server proxy with unparalleled server support, scalability, and flexibility. Runs on the morinoparty/fruits Java images (Java 25 / Java 21, Eclipse Temurin / Azul Zulu) with tuned JVM flags. Velocity 4.x requires Java 25.'
+tags:
+  - minecraft
+  - proxy
+  - velocity
+features:
+  - java_version
+  - pid_limit
+docker_images:
+  'Java 25 - Temurin': 'ghcr.io/morinoparty/fruits:java_25-temurin'
+  'Java 25 - Azul Zulu': 'ghcr.io/morinoparty/fruits:java_25-azul_zulu'
+  'Java 21 - Temurin': 'ghcr.io/morinoparty/fruits:java_21-temurin'
+  'Java 21 - Azul Zulu': 'ghcr.io/morinoparty/fruits:java_21-azul_zulu'
+file_denylist: {  }
+startup_commands:
+  Default: 'java -Xms{{JVM_HEAP_MB}}M -Xmx{{JVM_HEAP_MB}}M -XX:+UseG1GC -XX:G1HeapRegionSize=4M -XX:+UnlockExperimentalVMOptions -XX:+ParallelRefProcEnabled -XX:+AlwaysPreTouch -XX:MaxInlineLevel=15 -Dterminal.jline=false -Dterminal.ansi=true -jar {{SERVER_JARFILE}}'
+  'Java 25 - G1GC (compact headers)': 'java -Xms{{JVM_HEAP_MB}}M -Xmx{{JVM_HEAP_MB}}M -XX:+UseCompactObjectHeaders -XX:+UseG1GC -XX:G1HeapRegionSize=4M -XX:+UnlockExperimentalVMOptions -XX:+ParallelRefProcEnabled -XX:+AlwaysPreTouch -XX:MaxInlineLevel=15 -Dterminal.jline=false -Dterminal.ansi=true -jar {{SERVER_JARFILE}}'
+config:
+  files:
+    velocity.toml:
+      parser: file
+      find:
+        'bind = ': 'bind = "0.0.0.0:{{server.allocations.default.port}}"'
+  startup:
+    done: 'Done ('
+  logs: {  }
+  stop: end
+scripts:
+  installation:
+    script: |-
+      #!/bin/ash
+      # Velocity Installation Script
+      #
+      # Server Files: /mnt/server
+      PROJECT=velocity
+      API=https://fill.papermc.io/v3/projects/${PROJECT}
+      # PaperMC asks API clients to identify themselves.
+      UA="morinoparty-fruits-egg (+https://github.com/morinoparty/fruits)"
+
+      if [ -n "${DL_PATH}" ]; then
+      	echo -e "Using supplied download url: ${DL_PATH}"
+      	DOWNLOAD_URL=`eval echo $(echo ${DL_PATH} | sed -e 's/{{/${/g' -e 's/}}/}/g')`
+      else
+      	PROJECT_JSON=`curl -s -A "${UA}" ${API}`
+      	# Versions are listed newest first. "latest" means the newest release;
+      	# "snapshot" means the newest version of any kind, -SNAPSHOT included.
+      	LATEST_VERSION=`echo "${PROJECT_JSON}" | jq -r '[.versions[][] | select(endswith("-SNAPSHOT") | not)] | .[0]'`
+      	LATEST_SNAPSHOT=`echo "${PROJECT_JSON}" | jq -r '[.versions[][]] | .[0]'`
+      	VER_EXISTS=`echo "${PROJECT_JSON}" | jq -r --arg VERSION "${VELOCITY_VERSION}" '[.versions[][]] | index($VERSION) != null'`
+
+      	if [ "${VELOCITY_VERSION}" == "latest" ]; then
+      		echo -e "Using the latest ${PROJECT} release"
+      		VELOCITY_VERSION=${LATEST_VERSION}
+      	elif [ "${VELOCITY_VERSION}" == "snapshot" ]; then
+      		echo -e "Using the newest ${PROJECT} version, snapshots included"
+      		VELOCITY_VERSION=${LATEST_SNAPSHOT}
+      	elif [ "${VER_EXISTS}" == "true" ]; then
+      		echo -e "Version is valid. Using version ${VELOCITY_VERSION}"
+      	else
+      		echo -e "Specified version not found. Defaulting to the latest ${PROJECT} release"
+      		VELOCITY_VERSION=${LATEST_VERSION}
+      	fi
+
+      	VERSION_JSON=`curl -s -A "${UA}" ${API}/versions/${VELOCITY_VERSION}`
+      	BUILD_EXISTS=`echo "${VERSION_JSON}" | jq -r --arg BUILD "${BUILD_NUMBER}" '.builds | map(tostring) | index($BUILD) != null'`
+      	LATEST_BUILD=`echo "${VERSION_JSON}" | jq -r '.builds[0]'`
+
+      	if [ "${BUILD_EXISTS}" == "true" ]; then
+      		echo -e "Build is valid for version ${VELOCITY_VERSION}. Using build ${BUILD_NUMBER}"
+      	else
+      		echo -e "Using the latest ${PROJECT} build for version ${VELOCITY_VERSION}"
+      		BUILD_NUMBER=${LATEST_BUILD}
+      	fi
+
+      	echo "Version being downloaded"
+      	echo -e "Project: ${PROJECT}"
+      	echo -e "Velocity Version: ${VELOCITY_VERSION}"
+      	echo -e "Build: ${BUILD_NUMBER}"
+      	BUILD_JSON=`curl -s -A "${UA}" ${API}/versions/${VELOCITY_VERSION}/builds/${BUILD_NUMBER}`
+      	DOWNLOAD_URL=`echo "${BUILD_JSON}" | jq -r '.downloads."server:default".url'`
+      	DOWNLOAD_NAME=`echo "${BUILD_JSON}" | jq -r '.downloads."server:default".name'`
+      fi
+
+      mkdir -p /mnt/server
+      cd /mnt/server
+
+      # If SERVER_JARFILE contains a wildcard, keep Velocity's own filename
+      # (velocity-<version>-<build>.jar) so the jar is named the same way it is
+      # when downloaded by hand. Otherwise save under the literal name that was given.
+      case "${SERVER_JARFILE}" in
+      	*[*?]*)
+      		JAR_NAME="${DOWNLOAD_NAME}"
+      		if [ -z "${JAR_NAME}" ] || [ "${JAR_NAME}" = "null" ]; then
+      			JAR_NAME=`basename "${DOWNLOAD_URL%%\?*}"`
+      		fi
+      		if [ -z "${JAR_NAME}" ]; then
+      			JAR_NAME="velocity.jar"
+      		fi
+      		;;
+      	*)
+      		JAR_NAME="${SERVER_JARFILE}"
+      		;;
+      esac
+
+      # A wildcard that matches more than one jar does not fail - java runs the
+      # first match and passes the rest as arguments, silently starting the older
+      # build. Move any previous jar out of the way before downloading.
+      for f in velocity-*.jar; do
+      	[ -e "$f" ] && mv -- "$f" "$f.old"
+      done
+
+      if [ -f "${JAR_NAME}" ]; then
+      	mv -- "${JAR_NAME}" "${JAR_NAME}.old"
+      fi
+
+      echo -e "Running curl -o ${JAR_NAME} ${DOWNLOAD_URL}"
+
+      curl -A "${UA}" -o "${JAR_NAME}" "${DOWNLOAD_URL}"
+
+      # Velocity binds 25565 when it writes its own config on first start, and a
+      # velocity.toml containing only the bind line is read as an old config
+      # version. Seed the full default config that ships inside this jar instead,
+      # so the panel only has to rewrite the bind line.
+      if [ ! -f velocity.toml ]; then
+      	echo -e "Extracting default velocity.toml from ${JAR_NAME}"
+      	unzip -p "${JAR_NAME}" default-velocity.toml > velocity.toml
+      	# An empty file is worse than none: Velocity reads it as an old config.
+      	[ -s velocity.toml ] || rm -f velocity.toml
+      fi
+    container: 'ghcr.io/pelican-eggs/installers:alpine'
+    entrypoint: ash
+variables:
+  -
+    name: 'Velocity Version'
+    description: "The version of Velocity to download.\r\n\r\nLeave at latest to get the newest release (e.g. 4.2.0). Set to snapshot to get the newest version including -SNAPSHOT builds, or give an exact version such as 3.5.1 or 4.2.1-SNAPSHOT. Invalid versions will default to latest.\r\n\r\nVelocity 4.x requires a Java 25 image."
+    env_variable: VELOCITY_VERSION
+    default_value: latest
+    user_viewable: true
+    user_editable: true
+    rules:
+      - required
+      - string
+      - 'max:20'
+    sort: 1
+  -
+    name: 'Server Jar File'
+    description: "The name of the server jarfile to run the proxy with.\r\n\r\nThe default keeps Velocity's own filename (velocity-<version>-<build>.jar), matching what you get downloading Velocity by hand, and the * expands at startup. The installer moves any previous velocity-*.jar aside so the wildcard only ever matches one file. Set a literal name such as velocity.jar if you prefer a fixed filename - the installer will then save it under exactly that name."
+    env_variable: SERVER_JARFILE
+    default_value: 'velocity-*.jar'
+    user_viewable: true
+    user_editable: true
+    rules:
+      - required
+      - 'regex:/^([\w\d.*?_-]+)(\.jar)$/'
+    sort: 2
+  -
+    name: 'Download Path'
+    description: |-
+      A URL to use to download a server.jar rather than the ones in the install script. This is not user
+      viewable.
+    env_variable: DL_PATH
+    default_value: ''
+    user_viewable: false
+    user_editable: false
+    rules:
+      - nullable
+      - string
+    sort: 3
+  -
+    name: 'Build Number'
+    description: "The build number for the Velocity release.\r\n\r\nLeave at latest to always get the latest build of the chosen version. Invalid builds will default to latest."
+    env_variable: BUILD_NUMBER
+    default_value: latest
+    user_viewable: true
+    user_editable: true
+    rules:
+      - required
+      - string
+      - 'max:20'
+    sort: 4
+  -
+    name: 'JVM Heap Size (MB)'
+    description: "Size of the JVM heap in MB, used for both -Xms and -Xmx.\r\n\r\nThis is the heap only - Metaspace, GC structures, thread stacks and Netty's direct buffers sit on top of it, so keep it well below the memory allocated to this server. A proxy needs far less than a game server: the default of 512 fits a 1GB allocation, and 1024 is plenty for most networks with a 2GB allocation.\r\n\r\nSetting it larger than the container can hold does not degrade gracefully: -XX:+AlwaysPreTouch commits the whole heap during startup, so the kernel kills the process immediately with exit code 137 and no Java error message."
+    env_variable: JVM_HEAP_MB
+    default_value: '512'
+    user_viewable: true
+    user_editable: true
+    rules:
+      - required
+      - integer
+      - 'between:256,262144'
+    sort: 5
