@@ -10,7 +10,7 @@ updates:
         patterns:
           - "*"
     ignore:
-      # Java の major（21 / 25）はディレクトリ単位で固定しているため、major 更新は行わない
+      # Java の major（25）はディレクトリ単位で固定しているため、major 更新は行わない
       - dependency-name: "*"
         update-types:
           - "version-update:semver-major"
