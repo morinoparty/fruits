@@ -6,7 +6,7 @@ exported_at: '2026-10-15T00:00:00+00:00'
 name: 'Velocity (Fruits)'
 author: nikomaru@nikomaru.dev
 uuid: 6be86af3-c325-42f1-a022-27b9d925d5da
-description: 'Velocity is a Minecraft server proxy with unparalleled server support, scalability, and flexibility. Runs on the morinoparty/fruits Java images (Java 25 / Java 21, Eclipse Temurin / Azul Zulu) with tuned JVM flags. Velocity 4.x requires Java 25.'
+description: 'Velocity is a Minecraft server proxy with unparalleled server support, scalability, and flexibility. Runs on the morinoparty/fruits Java images (Java 25, Eclipse Temurin / Azul Zulu) with tuned JVM flags.'
 tags:
   - minecraft
   - proxy
@@ -17,8 +17,6 @@ features:
 docker_images:
   'Java 25 - Temurin': 'ghcr.io/morinoparty/fruits:java_25-temurin'
   'Java 25 - Azul Zulu': 'ghcr.io/morinoparty/fruits:java_25-azul_zulu'
-  'Java 21 - Temurin': 'ghcr.io/morinoparty/fruits:java_21-temurin'
-  'Java 21 - Azul Zulu': 'ghcr.io/morinoparty/fruits:java_21-azul_zulu'
 file_denylist: {  }
 startup_commands:
   Default: 'java -Xms{{JVM_HEAP_MB}}M -Xmx{{JVM_HEAP_MB}}M -XX:+UseG1GC -XX:G1HeapRegionSize=4M -XX:+UnlockExperimentalVMOptions -XX:+ParallelRefProcEnabled -XX:+AlwaysPreTouch -XX:MaxInlineLevel=15 -Dterminal.jline=false -Dterminal.ansi=true -jar {{SERVER_JARFILE}}'

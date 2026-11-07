@@ -27,7 +27,7 @@
 - ビルドコンテキストは `java/` です (`COPY ./../entrypoint.sh /entrypoint.sh` はこれを前提にしています)。
 - 既存の Dockerfile と同じく、`container` ユーザーを作成して `USER container` / `WORKDIR /home/container` で動かし、`CMD [ "/bin/bash", "/entrypoint.sh" ]` で起動してください。
 - 必要なパッケージ (`lsof curl ca-certificates openssl git tar sqlite3 fontconfig libfreetype6 tzdata iproute2 libstdc++6`) は全イメージで揃えてください。
-- `LABEL org.opencontainers.image.source="https://github.com/morinoparty/fruits"` を付けてください (現状 `java/21-graalvm_jdk/Dockerfile` だけは旧リポジトリの `https://github.com/Nlkomaru/yolks` のままです)。
+- `LABEL org.opencontainers.image.source="https://github.com/morinoparty/fruits"` を付けてください。
 - イメージを追加・削除したら、`.github/workflows/build.yaml` の `matrix.tag` も合わせて更新してください。
 
 ## egg (YAML)
