@@ -29,6 +29,8 @@ GitHub Container Registry (GHCR) に `linux/amd64` のみで公開します。
 - egg が提供するイメージは Temurin と Azul Zulu のみです (README の Runtime comparison で実測して最速だったため)。GraalVM はビルドはしますが egg の選択肢には入れません。
 - OpenJ9 のイメージは作りません。Paperclip の bzip2 パッチ処理が OpenJ9 で断続的に `java.io.IOException: block overrun` で失敗する上流バグ (PaperMC/Paperclip#68) があり、また G1GC が無く未知の `-XX:` オプションを黙って無視するため Aikar's flags が効きません。
 - Aikar's flags の `-XX:+UnlockExperimentalVMOptions` は必須です (`G1NewSizePercent` などが Java 25 でも experimental のため)。
+- `-XX:+ParallelRefProcEnabled` は意図的に外しています。Java 25 ではデフォルトで有効で、Java 27 では削除済み (`Ignoring option` の警告が出る) のためです。Aikar's flags に合わせて戻さないでください。
+- `-XX:InitiatingHeapOccupancyPercent` は Java 27 で非推奨 (`G1IHOP` に置き換え) ですが、`G1IHOP` は Java 25 で Unrecognized になります。そのため `Default` は Java 25 向けのまま残し、Java 27 では非推奨の警告が 1 行出ることを許容しています。警告の出ない Java 27 用として `Java 27 - G1GC` を用意しています。
 - ヒープは `-Xms{{JVM_HEAP_MB}}M -Xmx{{JVM_HEAP_MB}}M` と固定 MB で指定します (Paper のデフォルト 2048、Velocity のデフォルト 512)。`-XX:MaxRAMPercentage` は、Wings がコンテナに上乗せした余裕を食いつぶし、メモリ無制限のサーバーではホストの RAM 基準になるため使いません。
 - `SERVER_JARFILE` のデフォルトはワイルドカード (`paper-*.jar` / `velocity-*.jar`) です。複数の jar にマッチすると JVM は最初の 1 つを黙って起動するため、インストールスクリプトは既存の jar を `.jar.old` にリネームしてから新しい jar を保存します。
 - Velocity egg の `VELOCITY_VERSION=latest` は、`-SNAPSHOT` を含まない最新リリースを指します (Fill API の先頭は SNAPSHOT のことがあり、channel でも区別できないため)。

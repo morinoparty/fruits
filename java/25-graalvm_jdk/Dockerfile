@@ -5,7 +5,7 @@ LABEL author="nikomaru" maintainer="nikomaru@nikomaru.dev"
 LABEL org.opencontainers.image.source="https://github.com/morinoparty/fruits"
 
 # GraalVM Community 25.0.5.0.3 (graal-25.5.5.0.3). No GraalVM CE build with the
-# CVE-2026-114938 fix existed when this was written, so this image is still affected.
+# CVE-2026-114938 fix existed when this was written, so this image does not include the fix.
 # GraalVM is not offered by the eggs; bump this once a fixed release is published.
 ARG JDK_URL=https://github.com/graalvm/graalvm-ce-builds/releases/download/graal-25.5.5.0.3/graalvm-community-jdk-25i5-25.0.5.0.3_linux-x64_bin.tar.gz
 ARG JDK_SHA256=c6438dee6c3ade2220d40b7ccdcad24b512d30e233e61bb4fc70519522de34ef
