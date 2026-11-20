@@ -8,15 +8,21 @@ Published to GitHub Container Registry, `linux/amd64` only. Rebuilt monthly and 
 
 | Image | JDK | Base |
 |-------|-----|------|
-| `ghcr.io/morinoparty/fruits:java_25-temurin` | Eclipse Temurin 25 | `eclipse-temurin:25-jdk` |
-| `ghcr.io/morinoparty/fruits:java_25-azul_zulu` | Azul Zulu 25 | `azul/zulu-openjdk:25` |
-| `ghcr.io/morinoparty/fruits:java_25-graalvm_jdk` | GraalVM Community 25.0.2 | `ubuntu:22.04` + upstream tarball |
+| `ghcr.io/morinoparty/fruits:java_25-temurin` | Eclipse Temurin 25.0.5.1+2 | `ubuntu:26.04` + Adoptium tarball |
+| `ghcr.io/morinoparty/fruits:java_25-azul_zulu` | Azul Zulu 25.38.201 (JDK 25.0.5.1) | `ubuntu:26.04` + Azul tarball |
+| `ghcr.io/morinoparty/fruits:java_25-graalvm_jdk` | GraalVM Community 25.0.5.0.3 | `ubuntu:26.04` + upstream tarball |
+| `ghcr.io/morinoparty/fruits:java_27-temurin` | Eclipse Temurin 27.0.1.1+4 | `ubuntu:26.04` + Adoptium tarball |
+| `ghcr.io/morinoparty/fruits:java_27-azul_zulu` | Azul Zulu 27.30.201 (JDK 27.0.1.1) | `ubuntu:26.04` + Azul tarball |
 
-Temurin and Zulu track their upstream tags and pick up patch releases on rebuild. GraalVM pins an exact tarball version in its `Dockerfile`.
+Every image installs its JDK from the vendor tarball, pinned by URL and SHA-256 in its `Dockerfile`, so a JDK update means editing that file. The tarballs are used because, when [CVE-2026-114938](https://app.opencve.io/cve/CVE-2026-114938) (Java4Shell) was fixed in 25.0.5.1 and 27.0.1.1, the `eclipse-temurin` and `azul/zulu-openjdk` Docker images had not caught up yet. Monthly rebuilds still pick up Ubuntu package updates.
+
+The Temurin and Zulu images include the CVE-2026-114938 fix. The GraalVM image does **not**: no GraalVM Community build with the fix had been released, so it stays on the newest available build until one is.
+
+Java 27 is a non-LTS release supported until Java 28 ships in March 2027. Java 25 is the LTS line.
 
 ## Paper egg
 
-`eggs/paper/egg-fruits-paper.yaml` is a Pelican egg for [Paper](https://papermc.io/), derived from the [pelican-eggs](https://github.com/pelican-eggs/minecraft) egg. It offers the Temurin and Azul Zulu images; GraalVM can still be used by editing a server's image.
+`eggs/paper/egg-fruits-paper.yaml` is a Pelican egg for [Paper](https://papermc.io/), derived from the [pelican-eggs](https://github.com/pelican-eggs/minecraft) egg. It offers the Temurin and Azul Zulu images for Java 25 and Java 27; GraalVM can still be used by editing a server's image.
 
 ### Import
 
@@ -35,6 +41,9 @@ That URL is also the egg's `update_url`, so **Update Egg** in the panel pulls ch
 | `Default` | [Aikar's flags](https://docs.papermc.io/paper/aikars-flags/) (G1GC). |
 | `Java 25 - G1GC (compact headers)` | Adds `-XX:+UseCompactObjectHeaders` ([JEP 519](https://openjdk.org/jeps/519)) to shrink object headers from 12 to 8 bytes. |
 | `Java 25 - Generational ZGC` | Sub-millisecond pauses at the cost of throughput; worth trying on large heaps (16GB+). |
+| `Java 27 - G1GC` | Aikar's flags for Java 27 images: `-XX:InitiatingHeapOccupancyPercent` is deprecated in 27 in favour of `-XX:G1IHOP`, which Java 25 does not recognise. Compact headers are the default on 27. |
+
+Every command except `Java 27 - G1GC` starts on both Java 25 and Java 27. On a Java 27 image, `Default` and `Java 25 - G1GC (compact headers)` print a one-line deprecation warning for `InitiatingHeapOccupancyPercent`, which `Java 27 - G1GC` avoids. `-XX:+ParallelRefProcEnabled` was dropped from Aikar's flags: it is already the default on Java 25 and is removed (ignored with a warning) on Java 27.
 
 The `sun.misc.Unsafe` warning on Java 25 is harmless and comes from Paper and its dependencies.
 
@@ -52,7 +61,7 @@ The `sun.misc.Unsafe` warning on Java 25 is harmless and comes from Paper and it
 
 ## Velocity egg
 
-`eggs/velocity/egg-fruits-velocity.yaml` is a Pelican egg for the [Velocity](https://papermc.io/software/velocity) proxy, modelled on the [pelican-eggs](https://github.com/pelican-eggs/minecraft) Velocity egg. It offers the Temurin and Azul Zulu images; GraalVM can still be used by editing a server's image.
+`eggs/velocity/egg-fruits-velocity.yaml` is a Pelican egg for the [Velocity](https://papermc.io/software/velocity) proxy, modelled on the [pelican-eggs](https://github.com/pelican-eggs/minecraft) Velocity egg. It offers the Temurin and Azul Zulu images for Java 25 and Java 27; GraalVM can still be used by editing a server's image.
 
 ### Import
 
@@ -70,6 +79,8 @@ That URL is also the egg's `update_url`, so **Update Egg** in the panel pulls ch
 |-----------------|-------|
 | `Default` | Flags from Velocity's [tuning guide](https://docs.papermc.io/velocity/tuning/) (G1GC). |
 | `Java 25 - G1GC (compact headers)` | Adds `-XX:+UseCompactObjectHeaders` ([JEP 519](https://openjdk.org/jeps/519)). |
+
+Both commands also run on the Java 27 images without warnings; compact headers are already the default there. `-XX:+ParallelRefProcEnabled` was dropped because it is the default on Java 25 and removed on Java 27.
 
 ### Variables
 
@@ -99,7 +110,7 @@ Measured on Paper 1.21.11 with the same seed and flags, generating a fresh world
 
 ## Verification
 
-Each startup command was checked flag by flag, then as a combined string, then with a real boot through `entrypoint.sh` with `STARTUP` set as the panel would. Boots reached `Done (...)` on Paper 26.2 and Velocity 4.2.0 on the Java 25 images. The install scripts were run against the real API, including a reinstall.
+Each startup command was checked flag by flag, then as a combined string, then with a real boot through `entrypoint.sh` with `STARTUP` set as the panel would. Boots reached `Done (...)` on Paper 26.2 and Velocity 4.2.0 on the Java 25 images. After the move to tarball-installed JDKs, every startup command was booted again on the Temurin and Zulu images for Java 25 and Java 27 (`Java 27 - G1GC` on Java 27 only), reaching `Done (...)` on Paper 26.3 and Velocity 4.3.1, and each image's `java -version` was checked against the CVE-2026-114938 fixed versions (25.0.5.1 / 27.0.1.1). The install scripts were run against the real API, including a reinstall.
 
 ## License
 

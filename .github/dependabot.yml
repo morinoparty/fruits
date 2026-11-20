@@ -10,7 +10,7 @@ updates:
         patterns:
           - "*"
     ignore:
-      # Java の major（25）はディレクトリ単位で固定しているため、major 更新は行わない
+      # JDK は tarball の URL と sha256 で固定しているため Dependabot の対象外。ここで追うのはベースの ubuntu だけで、major 更新は行わない
       - dependency-name: "*"
         update-types:
           - "version-update:semver-major"

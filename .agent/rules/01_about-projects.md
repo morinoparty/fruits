@@ -5,7 +5,7 @@
 ## 目的
 morinoparty の Minecraft サーバーを [Pelican](https://pelican.dev/) パネルで動かすための実行環境を提供します。
 
-- **Java コンテナイメージ** - LTS の Java 25 について、3 種類の JVM ディストリビューションのイメージを作ります。
+- **Java コンテナイメージ** - LTS の Java 25 は 3 種類、非 LTS の Java 27 は 2 種類 (Temurin / Zulu) の JVM ディストリビューションのイメージを作ります。
   どのイメージも Pelican 標準の `entrypoint.sh` を実行し、パネルの `STARTUP` 変数を展開するので、Java イメージを前提とする任意の egg から利用できます。
 - **Paper egg** (`eggs/paper/egg-fruits-paper.yaml`) - Paper 用の Pelican egg (`PLCN_v3`)。pelican-eggs の egg をベースに、イメージと起動コマンドをこのリポジトリ向けにしています。
 - **Velocity egg** (`eggs/velocity/egg-fruits-velocity.yaml`) - Velocity プロキシ用の Pelican egg (`PLCN_v3`)。インストールスクリプトは Paper egg のものを元に書き直しています。
@@ -15,17 +15,22 @@ GitHub Container Registry (GHCR) に `linux/amd64` のみで公開します。
 
 | タグ | JDK | ベース |
 |------|-----|--------|
-| `ghcr.io/morinoparty/fruits:java_25-temurin` | Eclipse Temurin 25 | `eclipse-temurin:25-jdk` |
-| `ghcr.io/morinoparty/fruits:java_25-azul_zulu` | Azul Zulu 25 | `azul/zulu-openjdk:25` |
-| `ghcr.io/morinoparty/fruits:java_25-graalvm_jdk` | GraalVM Community 25.0.2 | `ubuntu:22.04` + 公式 tarball |
+| `ghcr.io/morinoparty/fruits:java_25-temurin` | Eclipse Temurin 25.0.5.1+2 | `ubuntu:26.04` + Adoptium の tarball |
+| `ghcr.io/morinoparty/fruits:java_25-azul_zulu` | Azul Zulu 25.38.201 (JDK 25.0.5.1) | `ubuntu:26.04` + Azul の tarball |
+| `ghcr.io/morinoparty/fruits:java_25-graalvm_jdk` | GraalVM Community 25.0.5.0.3 | `ubuntu:26.04` + 公式 tarball |
+| `ghcr.io/morinoparty/fruits:java_27-temurin` | Eclipse Temurin 27.0.1.1+4 | `ubuntu:26.04` + Adoptium の tarball |
+| `ghcr.io/morinoparty/fruits:java_27-azul_zulu` | Azul Zulu 27.30.201 (JDK 27.0.1.1) | `ubuntu:26.04` + Azul の tarball |
 
-- Temurin / Zulu は上流のタグに追従するので、再ビルドでパッチリリースが入ります。
-- GraalVM は tarball のバージョンを固定しているため、上げるときは `Dockerfile` を編集します。
+- すべてのイメージで JDK を tarball から入れ、URL と sha256 を `Dockerfile` に固定しています。JDK を上げるときは `Dockerfile` を編集します。
+- CVE-2026-114938 (Java4Shell) の修正版 (25.0.5.1 / 27.0.1.1) が `eclipse-temurin` / `azul/zulu-openjdk` の Docker イメージにまだ入っていなかったため、上流イメージをやめて tarball に切り替えました。
+- GraalVM Community には CVE-2026-114938 の修正版がまだ無いため、`java_25-graalvm_jdk` は未修正です (egg には載せていません)。
 
 ### egg の前提知識
 - egg が提供するイメージは Temurin と Azul Zulu のみです (README の Runtime comparison で実測して最速だったため)。GraalVM はビルドはしますが egg の選択肢には入れません。
 - OpenJ9 のイメージは作りません。Paperclip の bzip2 パッチ処理が OpenJ9 で断続的に `java.io.IOException: block overrun` で失敗する上流バグ (PaperMC/Paperclip#68) があり、また G1GC が無く未知の `-XX:` オプションを黙って無視するため Aikar's flags が効きません。
 - Aikar's flags の `-XX:+UnlockExperimentalVMOptions` は必須です (`G1NewSizePercent` などが Java 25 でも experimental のため)。
+- `-XX:+ParallelRefProcEnabled` は意図的に外しています。Java 25 ではデフォルトで有効で、Java 27 では削除済み (`Ignoring option` の警告が出る) のためです。Aikar's flags に合わせて戻さないでください。
+- `-XX:InitiatingHeapOccupancyPercent` は Java 27 で非推奨 (`G1IHOP` に置き換え) ですが、`G1IHOP` は Java 25 で Unrecognized になります。そのため `Default` は Java 25 向けのまま残し、Java 27 では非推奨の警告が 1 行出ることを許容しています。警告の出ない Java 27 用として `Java 27 - G1GC` を用意しています。
 - ヒープは `-Xms{{JVM_HEAP_MB}}M -Xmx{{JVM_HEAP_MB}}M` と固定 MB で指定します (Paper のデフォルト 2048、Velocity のデフォルト 512)。`-XX:MaxRAMPercentage` は、Wings がコンテナに上乗せした余裕を食いつぶし、メモリ無制限のサーバーではホストの RAM 基準になるため使いません。
 - `SERVER_JARFILE` のデフォルトはワイルドカード (`paper-*.jar` / `velocity-*.jar`) です。複数の jar にマッチすると JVM は最初の 1 つを黙って起動するため、インストールスクリプトは既存の jar を `.jar.old` にリネームしてから新しい jar を保存します。
 - Velocity egg の `VELOCITY_VERSION=latest` は、`-SNAPSHOT` を含まない最新リリースを指します (Fill API の先頭は SNAPSHOT のことがあり、channel でも区別できないため)。

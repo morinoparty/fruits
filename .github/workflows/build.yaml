@@ -28,6 +28,8 @@ jobs:
           - 25-azul_zulu
           - 25-graalvm_jdk
           - 25-temurin
+          - 27-azul_zulu
+          - 27-temurin
     steps:
       - uses: actions/checkout@v7
       # linux/amd64 だけをビルドするので QEMU (他アーキのエミュレーション) は使わない
