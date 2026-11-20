@@ -6,7 +6,7 @@ exported_at: '2026-10-15T00:00:00+00:00'
 name: 'Velocity (Fruits)'
 author: nikomaru@nikomaru.dev
 uuid: 6be86af3-c325-42f1-a022-27b9d925d5da
-description: 'Velocity is a Minecraft server proxy with unparalleled server support, scalability, and flexibility. Runs on the morinoparty/fruits Java images (Java 25, Eclipse Temurin / Azul Zulu) with tuned JVM flags.'
+description: 'Velocity is a Minecraft server proxy with unparalleled server support, scalability, and flexibility. Runs on the morinoparty/fruits Java images (Java 25 / 27, Eclipse Temurin / Azul Zulu) with tuned JVM flags.'
 tags:
   - minecraft
   - proxy
@@ -17,10 +17,12 @@ features:
 docker_images:
   'Java 25 - Temurin': 'ghcr.io/morinoparty/fruits:java_25-temurin'
   'Java 25 - Azul Zulu': 'ghcr.io/morinoparty/fruits:java_25-azul_zulu'
+  'Java 27 - Temurin': 'ghcr.io/morinoparty/fruits:java_27-temurin'
+  'Java 27 - Azul Zulu': 'ghcr.io/morinoparty/fruits:java_27-azul_zulu'
 file_denylist: {  }
 startup_commands:
-  Default: 'java -Xms{{JVM_HEAP_MB}}M -Xmx{{JVM_HEAP_MB}}M -XX:+UseG1GC -XX:G1HeapRegionSize=4M -XX:+UnlockExperimentalVMOptions -XX:+ParallelRefProcEnabled -XX:+AlwaysPreTouch -XX:MaxInlineLevel=15 -Dterminal.jline=false -Dterminal.ansi=true -jar {{SERVER_JARFILE}}'
-  'Java 25 - G1GC (compact headers)': 'java -Xms{{JVM_HEAP_MB}}M -Xmx{{JVM_HEAP_MB}}M -XX:+UseCompactObjectHeaders -XX:+UseG1GC -XX:G1HeapRegionSize=4M -XX:+UnlockExperimentalVMOptions -XX:+ParallelRefProcEnabled -XX:+AlwaysPreTouch -XX:MaxInlineLevel=15 -Dterminal.jline=false -Dterminal.ansi=true -jar {{SERVER_JARFILE}}'
+  Default: 'java -Xms{{JVM_HEAP_MB}}M -Xmx{{JVM_HEAP_MB}}M -XX:+UseG1GC -XX:G1HeapRegionSize=4M -XX:+UnlockExperimentalVMOptions -XX:+AlwaysPreTouch -XX:MaxInlineLevel=15 -Dterminal.jline=false -Dterminal.ansi=true -jar {{SERVER_JARFILE}}'
+  'Java 25 - G1GC (compact headers)': 'java -Xms{{JVM_HEAP_MB}}M -Xmx{{JVM_HEAP_MB}}M -XX:+UseCompactObjectHeaders -XX:+UseG1GC -XX:G1HeapRegionSize=4M -XX:+UnlockExperimentalVMOptions -XX:+AlwaysPreTouch -XX:MaxInlineLevel=15 -Dterminal.jline=false -Dterminal.ansi=true -jar {{SERVER_JARFILE}}'
 config:
   files:
     velocity.toml:
@@ -138,7 +140,7 @@ scripts:
 variables:
   -
     name: 'Velocity Version'
-    description: "The version of Velocity to download.\r\n\r\nLeave at latest to get the newest release (e.g. 4.2.0). Set to snapshot to get the newest version including -SNAPSHOT builds, or give an exact version such as 3.5.1 or 4.2.1-SNAPSHOT. Invalid versions will default to latest.\r\n\r\nVelocity 4.x requires a Java 25 image."
+    description: "The version of Velocity to download.\r\n\r\nLeave at latest to get the newest release (e.g. 4.2.0). Set to snapshot to get the newest version including -SNAPSHOT builds, or give an exact version such as 3.5.1 or 4.2.1-SNAPSHOT. Invalid versions will default to latest.\r\n\r\nVelocity 4.x requires a Java 25 or Java 27 image."
     env_variable: VELOCITY_VERSION
     default_value: latest
     user_viewable: true
