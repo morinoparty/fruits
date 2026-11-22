@@ -39,11 +39,12 @@ That URL is also the egg's `update_url`, so **Update Egg** in the panel pulls ch
 | Startup command | Notes |
 |-----------------|-------|
 | `Default` | [Aikar's flags](https://docs.papermc.io/paper/aikars-flags/) (G1GC). |
-| `Java 25 - G1GC (compact headers)` | Adds `-XX:+UseCompactObjectHeaders` ([JEP 519](https://openjdk.org/jeps/519)) to shrink object headers from 12 to 8 bytes. |
-| `Java 25 - Generational ZGC` | Sub-millisecond pauses at the cost of throughput; worth trying on large heaps (16GB+). |
-| `Java 27 - G1GC` | Aikar's flags for Java 27 images: `-XX:InitiatingHeapOccupancyPercent` is deprecated in 27 in favour of `-XX:G1IHOP`, which Java 25 does not recognise. Compact headers are the default on 27. |
+| `Generational ZGC` | Sub-millisecond pauses at the cost of throughput; worth trying on large heaps (16GB+). Also enables compact object headers ([JEP 519](https://openjdk.org/jeps/519)). |
+| `Java 27 - G1GC` | Aikar's flags for Java 27 images: `-XX:InitiatingHeapOccupancyPercent` is deprecated in 27 in favour of `-XX:G1IHOP`, which Java 25 does not recognise. |
 
-Every command except `Java 27 - G1GC` starts on both Java 25 and Java 27. On a Java 27 image, `Default` and `Java 25 - G1GC (compact headers)` print a one-line deprecation warning for `InitiatingHeapOccupancyPercent`, which `Java 27 - G1GC` avoids. `-XX:+ParallelRefProcEnabled` was dropped from Aikar's flags: it is already the default on Java 25 and is removed (ignored with a warning) on Java 27.
+`Default` and `Generational ZGC` start on both Java 25 and Java 27; `Java 27 - G1GC` starts on Java 27 only. On a Java 27 image, `Default` prints a one-line deprecation warning for `InitiatingHeapOccupancyPercent`, which `Java 27 - G1GC` avoids. `-XX:+ParallelRefProcEnabled` was dropped from Aikar's flags: it is already the default on Java 25 and is removed (ignored with a warning) on Java 27.
+
+Compact object headers ([JEP 519](https://openjdk.org/jeps/519)) shrink object headers from 12 to 8 bytes. They are the default on Java 27, so there is no separate G1GC command with `-XX:+UseCompactObjectHeaders`: choose a Java 27 image to get them.
 
 The `sun.misc.Unsafe` warning on Java 25 is harmless and comes from Paper and its dependencies.
 
@@ -78,9 +79,8 @@ That URL is also the egg's `update_url`, so **Update Egg** in the panel pulls ch
 | Startup command | Notes |
 |-----------------|-------|
 | `Default` | Flags from Velocity's [tuning guide](https://docs.papermc.io/velocity/tuning/) (G1GC). |
-| `Java 25 - G1GC (compact headers)` | Adds `-XX:+UseCompactObjectHeaders` ([JEP 519](https://openjdk.org/jeps/519)). |
 
-Both commands also run on the Java 27 images without warnings; compact headers are already the default there. `-XX:+ParallelRefProcEnabled` was dropped because it is the default on Java 25 and removed on Java 27.
+`Default` runs on the Java 25 and Java 27 images without warnings. Compact object headers are the default on Java 27, so choose a Java 27 image to get them. `-XX:+ParallelRefProcEnabled` was dropped because it is the default on Java 25 and removed on Java 27.
 
 ### Variables
 
