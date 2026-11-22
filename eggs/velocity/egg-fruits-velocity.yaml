@@ -22,7 +22,6 @@ docker_images:
 file_denylist: {  }
 startup_commands:
   Default: 'java -Xms{{JVM_HEAP_MB}}M -Xmx{{JVM_HEAP_MB}}M -XX:+UseG1GC -XX:G1HeapRegionSize=4M -XX:+UnlockExperimentalVMOptions -XX:+AlwaysPreTouch -XX:MaxInlineLevel=15 -Dterminal.jline=false -Dterminal.ansi=true -jar {{SERVER_JARFILE}}'
-  'Java 25 - G1GC (compact headers)': 'java -Xms{{JVM_HEAP_MB}}M -Xmx{{JVM_HEAP_MB}}M -XX:+UseCompactObjectHeaders -XX:+UseG1GC -XX:G1HeapRegionSize=4M -XX:+UnlockExperimentalVMOptions -XX:+AlwaysPreTouch -XX:MaxInlineLevel=15 -Dterminal.jline=false -Dterminal.ansi=true -jar {{SERVER_JARFILE}}'
 config:
   files:
     velocity.toml:
